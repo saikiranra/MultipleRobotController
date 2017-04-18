@@ -1,0 +1,23 @@
+<resources>
+    <string name="app_name">Multiple Robot Controller</string>
+    <string name="clear_paths">Clear Paths</string>
+    <string name="hello_world">Hello world!</string>
+    <string name="action_settings">Settings</string>
+
+    <string name="preference_key_file">saikiran.multiplerobotcontroller.PREFERENCES</string>
+
+    <string name="ros_core_ip_label">ROS Core IP Address</string>
+    <string name="ros_core_ip_key">RoscoreIPKey</string>
+    <string name="default_ros_core_ip">127.0.0.1</string>
+
+    <string name = "resolution_scale_label">Resolution Scale</string>
+    <string name="resolution_scale_key">ResolutionSaveKey</string>
+    <integer name="default_resolution_scale">10</integer>
+
+    <string name = "robot_id_key">RobotIdKeys</string>
+
+    <string name = "default_robot_data">Name,IP,#Color</string>
+    <integer name = "robot_data_name_key">0</integer>
+    <integer name = "robot_data_ip_key">1</integer>
+    <integer name = "robot_data_color_key">2</integer>
+</resources>
