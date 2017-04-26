@@ -1,6 +1,7 @@
 <resources>
     <string name="app_name">Multiple Robot Controller</string>
     <string name="clear_paths">Clear Paths</string>
+    <string name="execute_paths">Execute Paths</string>
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
 

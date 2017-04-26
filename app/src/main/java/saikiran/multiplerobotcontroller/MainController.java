@@ -16,6 +16,7 @@ import android.graphics.drawable.Icon;
 import android.graphics.drawable.shapes.RectShape;
 import android.graphics.drawable.shapes.RoundRectShape;
 import android.graphics.drawable.shapes.Shape;
+import android.os.AsyncTask;
 import android.support.v4.util.ArrayMap;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -24,6 +25,10 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.RelativeLayout;
 import android.view.ViewGroup.LayoutParams;
+
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URL;
 import java.util.ArrayList;
 //import android.support.v7.widget.Toolbar;
 import android.view.Menu;
@@ -32,9 +37,21 @@ import android.view.MenuItem;
 import android.view.SubMenu;
 import android.content.Intent;
 import android.graphics.drawable.ShapeDrawable;
+
+import org.ros.RosCore;
+import org.ros.address.InetAddressFactory;
+import org.ros.android.RosActivity;
+import org.ros.node.NodeConfiguration;
+import org.ros.node.NodeMainExecutor;
+import org.ros.node.DefaultNodeMainExecutor;
+import org.ros.android.MasterChooser;
+
 import saikiran.multiplerobotcontroller.DatabaseInterface;
 import saikiran.multiplerobotcontroller.RobotInfo;
 import saikiran.multiplerobotcontroller.RobotCanvas;
+import saikiran.multiplerobotcontroller.pathPublisher;
+
+import java.io.IOException;
 
 import java.util.HashMap;
 import java.util.List;
@@ -42,21 +59,26 @@ import java.util.ArrayList;
 import java.util.Map;
 
 
-public class MainController extends AppCompatActivity {
 
+public class MainController extends AppCompatActivity {
+    RosCore rosCore;
     RelativeLayout relativeLayout;
     Paint paint;
     RobotCanvas view;
     Path path2;
+    pathPublisher pathNode;
     Bitmap bitmap;
     Canvas canvas;
-    Button button;
+    Button clearButton;
+    Button executeButton;
     Menu robotSelectionMenu;
     DatabaseInterface db;
     Map<String , RobotInfo> robotInfoMap;
     Map<String , RobotCanvas> robotCanvasMap;
     List<RobotInfo> robotInfoList;
     MenuItem selectedRobotMenuItem;
+
+
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -136,7 +158,8 @@ public class MainController extends AppCompatActivity {
         }
 
         relativeLayout = (RelativeLayout) findViewById(R.id.relativelayout1);
-        button = (Button)findViewById(R.id.button);
+        clearButton = (Button)findViewById(R.id.clear_button);
+        executeButton = (Button)findViewById(R.id.execute_button);
 
         view = new RobotCanvas(MainController.this);
         relativeLayout.addView(view, new LayoutParams(
@@ -155,17 +178,49 @@ public class MainController extends AppCompatActivity {
 
         }
 
-
-
-
-        button.setOnClickListener(new View.OnClickListener() {
+        clearButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 view.resetPaths();
             }
         });
 
+        executeButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                sendPathsToNode();
+            }
+        });
+
+
+        try{
+            URL a = new URL(db.getROSCoreSavedIP());
+            URI rosc = URI.create(db.getROSCoreSavedIP());
+
+            new inetWorkaroundClass().execute(rosc);
+        } catch(MalformedURLException E){
+            //URL is invalid
+            System.out.println("URI " + db.getROSCoreSavedIP() + " is an invalid URI.");
+        }
+
+
     }
+
+    public void sendPathsToNode(){
+        Map<String , ArrayList<RobotCanvas.WayPoint>> pathData = view.getRobotPointMap();
+        pathNode.stagePaths(pathData);
+    }
+
+    public void runNode(java.net.InetAddress local_network_address , URI rosc){
+        NodeConfiguration nodeConfiguration = NodeConfiguration.newPublic(local_network_address.getHostAddress());
+        nodeConfiguration.setMasterUri(rosc);
+        nodeConfiguration.setNodeName("pathNode");
+        pathNode = new pathPublisher();
+        pathNode.initDatabase(this);
+        NodeMainExecutor runner = DefaultNodeMainExecutor.newDefault();
+        runner.execute(pathNode, nodeConfiguration);
+    }
+
 
     public void initializeRobotData(){
         db = new DatabaseInterface(this);
@@ -182,6 +237,33 @@ public class MainController extends AppCompatActivity {
     }
 
 
+    private class inetWorkaroundClass extends AsyncTask<URI , Integer , Integer> {
+        protected Integer doInBackground(URI ... uris){
+            int count = uris.length;
+            URI rosc = uris[0];
+            try {
+                Thread.sleep(1000);
+                java.net.Socket socket = new java.net.Socket(rosc.getHost(), rosc.getPort());
+                java.net.InetAddress local_network_address = socket.getLocalAddress();
+                socket.close();
+                runNode(local_network_address , rosc);
+            }catch(InterruptedException e) {
+                // Thread interruption
+                System.out.println("Talker sleep interrupted");
+            } catch (IOException e) {
+                // Socket problem
+                System.out.println("Talker socket error trying to get networking information from the master uri");
+            }
+            return 0;
+        }
+        protected void onProgressUpdate(Integer a){
+
+        }
+        protected  void onPostExecute(Integer a){
+
+        }
+
+    }
 
 }
 

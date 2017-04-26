@@ -9,6 +9,7 @@ import android.graphics.Path;
 import android.view.MotionEvent;
 import android.view.View;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -28,6 +29,7 @@ class RobotCanvas extends View {
     Map<String , Path> robotPathMap;
     Map<String , Paint> robotPaintMap;
     Map<String , ArrayList<RobotCanvas.DrawingClass>> DrawingClassArrayListMap;
+    Map<String , ArrayList<WayPoint>> robotPointMap;
     String currentRobotKey;
 
 
@@ -37,6 +39,7 @@ class RobotCanvas extends View {
         robotInfoMap = new HashMap<String , RobotInfo>();
         robotPaintMap = new HashMap<String , Paint>();
         robotPathMap = new HashMap<String , Path>();
+        robotPointMap = new HashMap<String , ArrayList<WayPoint>>();
         DrawingClassArrayListMap = new HashMap<String , ArrayList<RobotCanvas.DrawingClass>>();
 
         this.bitmap = Bitmap.createBitmap(820, 480, Bitmap.Config.ARGB_4444);
@@ -53,7 +56,8 @@ class RobotCanvas extends View {
 
     public void addRobot(String key , RobotInfo ri){
         currentRobotKey = key;
-        DrawingClassArrayListMap.put(currentRobotKey , new ArrayList<RobotCanvas.DrawingClass>());;
+        DrawingClassArrayListMap.put(currentRobotKey , new ArrayList<RobotCanvas.DrawingClass>());
+        robotPointMap.put(currentRobotKey , new ArrayList<WayPoint>());
         robotInfoMap.put(key , ri);
         robotNameList.add(key);
         robotPaintMap.put(key , new Paint());
@@ -63,6 +67,7 @@ class RobotCanvas extends View {
     public void setActiveRobot(String key){
         path2 = robotPathMap.get(key);
         paint = robotPaintMap.get(key);
+        currentRobotKey = key;
         setPaintOptions(robotInfoMap.get(key).color);
     }
 
@@ -70,7 +75,12 @@ class RobotCanvas extends View {
         for(int i = 0; i < robotNameList.size(); i++) {
             String key = robotNameList.get(i);
             robotPathMap.get(key).reset();
+            robotPointMap.get(key).clear();
         }
+    }
+
+    public Map<String , ArrayList<WayPoint>> getRobotPointMap(){
+        return robotPointMap;
     }
 
     @Override
@@ -86,7 +96,7 @@ class RobotCanvas extends View {
         if (event.getAction() == MotionEvent.ACTION_DOWN) {
 
             path2.moveTo(event.getX(), event.getY());
-
+            robotPointMap.get(currentRobotKey).add(new WayPoint(event.getX() , event.getY()));
             //path2.lineTo(event.getX(), event.getY());
         }
         else if (event.getAction() == MotionEvent.ACTION_MOVE) {
@@ -99,6 +109,7 @@ class RobotCanvas extends View {
 
             //DrawingClassArrayList.add(pathWithPaint);
             DrawingClassArrayListMap.get(currentRobotKey).add(pathWithPaint);
+            robotPointMap.get(currentRobotKey).add(new WayPoint(event.getX() , event.getY()));
         }
 
         invalidate();
@@ -156,6 +167,19 @@ class RobotCanvas extends View {
 
         public void setPaint(Paint paint) {
             this.DrawingClassPaint = paint;
+        }
+    }
+
+    public class WayPoint{
+        float x;
+        float y;
+        public WayPoint(float x , float y){
+            this.x = x;
+            this.y = y;
+        }
+        @Override
+        public String toString(){
+            return "{\"X\": " + this.x + " , \"Y\" " + this.y + "}";
         }
     }
 }

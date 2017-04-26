@@ -81,6 +81,14 @@ public class DatabaseInterface {
         }
     }
 
+    public String getROSCoreSavedIP(){
+        return ROSCoreSavedIP;
+    }
+
+    public int getResScaleSaved(){
+        return resScaleSaved;
+    }
+
     public List<RobotInfo> getRobotInfo(){
         int ipIndex = context.getResources().getInteger(R.integer.robot_data_ip_key);
         int colorIndex = context.getResources().getInteger(R.integer.robot_data_color_key);
