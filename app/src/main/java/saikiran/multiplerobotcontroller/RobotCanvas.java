@@ -57,11 +57,11 @@ class RobotCanvas extends View {
     public void addRobot(String key , RobotInfo ri){
         currentRobotKey = key;
         DrawingClassArrayListMap.put(currentRobotKey , new ArrayList<RobotCanvas.DrawingClass>());
-        robotPointMap.put(currentRobotKey , new ArrayList<WayPoint>());
         robotInfoMap.put(key , ri);
         robotNameList.add(key);
         robotPaintMap.put(key , new Paint());
         robotPathMap.put(key , new Path());
+        robotPointMap.put(robotInfoMap.get(key).ip , new ArrayList<WayPoint>());
     }
 
     public void setActiveRobot(String key){
@@ -75,7 +75,7 @@ class RobotCanvas extends View {
         for(int i = 0; i < robotNameList.size(); i++) {
             String key = robotNameList.get(i);
             robotPathMap.get(key).reset();
-            robotPointMap.get(key).clear();
+            robotPointMap.get(robotInfoMap.get(key).ip).clear();
         }
     }
 
@@ -96,7 +96,7 @@ class RobotCanvas extends View {
         if (event.getAction() == MotionEvent.ACTION_DOWN) {
 
             path2.moveTo(event.getX(), event.getY());
-            robotPointMap.get(currentRobotKey).add(new WayPoint(event.getX() , event.getY()));
+            robotPointMap.get(robotInfoMap.get(currentRobotKey).ip).add(new WayPoint(event.getX() , event.getY()));
             //path2.lineTo(event.getX(), event.getY());
         }
         else if (event.getAction() == MotionEvent.ACTION_MOVE) {
@@ -109,7 +109,7 @@ class RobotCanvas extends View {
 
             //DrawingClassArrayList.add(pathWithPaint);
             DrawingClassArrayListMap.get(currentRobotKey).add(pathWithPaint);
-            robotPointMap.get(currentRobotKey).add(new WayPoint(event.getX() , event.getY()));
+            robotPointMap.get(robotInfoMap.get(currentRobotKey).ip).add(new WayPoint(event.getX() , event.getY()));
         }
 
         invalidate();
@@ -170,7 +170,7 @@ class RobotCanvas extends View {
         }
     }
 
-    public class WayPoint{
+    public static class WayPoint{
         float x;
         float y;
         public WayPoint(float x , float y){
@@ -179,7 +179,7 @@ class RobotCanvas extends View {
         }
         @Override
         public String toString(){
-            return "{\"X\": " + this.x + " , \"Y\" " + this.y + "}";
+            return "{\"X\": " + this.x + " , \"Y\": " + this.y + "}";
         }
     }
 }

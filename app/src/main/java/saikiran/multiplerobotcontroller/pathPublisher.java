@@ -11,7 +11,10 @@ import org.ros.node.NodeMain;
 import org.ros.node.topic.Publisher;
 import org.json.*;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 import saikiran.multiplerobotcontroller.HelperFunctions;
@@ -22,6 +25,7 @@ public class pathPublisher extends AbstractNodeMain {
     private boolean newDataAvailable;
     private Map<String , ArrayList<RobotCanvas.WayPoint>> newPathData;
     DatabaseInterface db;
+    String encodedPaths;
 
     @Override
     public GraphName getDefaultNodeName() {
@@ -37,7 +41,7 @@ public class pathPublisher extends AbstractNodeMain {
     public void onStart(final ConnectedNode connectedNode) {
         newDataAvailable = false;
 
-        final Publisher<std_msgs.String> publisher = connectedNode.newPublisher("chatter", std_msgs.String._TYPE);
+        final Publisher<std_msgs.String> publisher = connectedNode.newPublisher("robot_paths", std_msgs.String._TYPE);
         // This CancellableLoop will be canceled automatically when the node shuts
         // down.
         connectedNode.executeCancellableLoop(new CancellableLoop() {
@@ -50,7 +54,7 @@ public class pathPublisher extends AbstractNodeMain {
 
             @Override
             protected void loop() throws InterruptedException {
-                publishPathMessage(publisher , "Hello world! " + sequenceNumber);
+                publishPathMessage(publisher);
                 sequenceNumber++;
                 Thread.sleep(1000);
             }
@@ -58,24 +62,35 @@ public class pathPublisher extends AbstractNodeMain {
     }
 
     public void stagePaths(Map<String , ArrayList<RobotCanvas.WayPoint>> pointData){
-        newDataAvailable = true;
         newPathData = pointData;
         processPaths();
+        newDataAvailable = true;
     }
 
     private void processPaths(){
         int resScale = db.getResScaleSaved();
+        Iterator it = newPathData.entrySet().iterator();
+        Map<String , ArrayList<RobotCanvas.WayPoint>> adjPath = new HashMap<String , ArrayList<RobotCanvas.WayPoint>>();
+        while(it.hasNext()){
+            Map.Entry<String , ArrayList<RobotCanvas.WayPoint>> pair = (Map.Entry) it.next();
+            adjPath.put(pair.getKey() , new  ArrayList<RobotCanvas.WayPoint>());
+            int size = pair.getValue().size();
+            for(int i = 0; i != size; i++){
+                adjPath.get(pair.getKey()).add(i , new RobotCanvas.WayPoint(pair.getValue().get(i).x/resScale, pair.getValue().get(i).y/resScale));
+                System.out.println(adjPath.get(pair.getKey()).get(i));
+            }
 
+        }
+        encodedPaths = HelperFunctions.JSONEncode(adjPath);
     }
 
 
 
-    public void publishPathMessage(Publisher<std_msgs.String> pub , String s){
+    public void publishPathMessage(Publisher<std_msgs.String> pub){
         if(newDataAvailable) {
             std_msgs.String str = pub.newMessage();
-            String message = HelperFunctions.JSONEncode(newPathData);
-            System.out.println(message);
-            str.setData(message);
+            System.out.println(encodedPaths);
+            str.setData(encodedPaths);
             pub.publish(str);
             newDataAvailable = false;
         }
